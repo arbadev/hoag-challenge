@@ -1,219 +1,302 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-This is a React Router v7 application with server-side rendering (SSR) enabled. It uses modern React patterns with TypeScript, Vite for bundling, and TailwindCSS for styling.
+**Call Center Management System** - A production-ready React application for managing call center operations with role-based access control.
+
+### Key Features
+- **Real-time Queue Management**: Live updates for incoming calls with priority handling
+- **Role-Based Access**: Separate interfaces for agents and administrators
+- **Agent Management**: Track availability, assignments, and performance
+- **Analytics Dashboard**: Real-time metrics and KPIs for administrators
+- **Responsive Design**: Mobile-first approach with full desktop support
 
 ## Development Commands
 
-### Core Development
-- `npm run dev` - Start development server with HMR at http://localhost:5173
-- `npm run build` - Create production build 
-- `npm run start` - Start production server from built files
-- `npm run typecheck` - Run TypeScript type checking and generate types
+### Core Development (use pnpm or npm)
+- `pnpm dev` - Start development server with HMR at http://localhost:5173
+- `pnpm build` - Create production build in `build/` directory
+- `pnpm start` - Start production server from built files
+- `pnpm typecheck` - Run TypeScript type checking and generate React Router types
 
 ### Package Manager
-This project uses `pnpm` (evidenced by pnpm-lock.yaml), but npm commands work as well.
+This project uses **pnpm** as the primary package manager (evidenced by pnpm-lock.yaml).
 
 ## Architecture
 
-### File Structure
-- `app/` - Main application code
-  - `root.tsx` - Root layout component with error boundary
-  - `routes.ts` - Route configuration using React Router v7 config format
-  - `routes/` - Route components (file-based routing)
-  - `lib/utils.ts` - Utility functions (includes `cn` function for class merging)
-  - `welcome/` - Welcome page components and assets
-- `react-router.config.ts` - React Router configuration (SSR enabled)
-- `vite.config.ts` - Vite configuration with TailwindCSS and tsconfigPaths plugins
+### Technology Stack
+- **React 19** - Latest React with improved performance features
+- **React Router v7** - Modern routing with SSR support
+- **TypeScript 5.8** - Type safety with strict mode enabled
+- **TailwindCSS v4** - Utility-first CSS with new features
+- **Vite 6.3** - Lightning-fast build tool
+- **shadcn/ui** - High-quality React components built on Radix UI
+
+### Project Structure
+```
+app/
+├── routes/                 # Page components (React Router v7 file-based routing)
+│   ├── home.tsx           # Landing page
+│   ├── login.tsx          # Authentication page
+│   ├── dashboard.tsx      # Dashboard layout wrapper
+│   └── dashboard/         # Dashboard sub-routes
+│       ├── home.tsx       # Dashboard overview
+│       ├── queue.tsx      # Call queue management
+│       ├── agents.tsx     # Agent management (admin only)
+│       └── analytics.tsx  # Analytics dashboard (admin only)
+├── components/            # Reusable components
+│   ├── ui/               # shadcn/ui components (Button, Card, Dialog, etc.)
+│   ├── auth/             # Authentication components
+│   │   └── role-selection-card.tsx
+│   ├── layouts/          # Layout components
+│   │   ├── main-layout.tsx
+│   │   ├── header.tsx
+│   │   └── sidebar.tsx
+│   ├── modals/           # Modal dialogs
+│   │   ├── assign-call-modal.tsx
+│   │   ├── transfer-call-modal.tsx
+│   │   ├── escalate-call-modal.tsx
+│   │   └── call-details-modal.tsx
+│   ├── providers/        # Provider wrapper components
+│   ├── loading-states/   # Skeleton loaders
+│   └── notifications/    # Toast notification components
+├── contexts/             # React Context providers
+│   ├── auth-context.tsx          # Authentication state
+│   ├── call-queue-context.tsx    # Call queue management
+│   ├── agents-context.tsx        # Agent management
+│   └── data-management-context.tsx # Data persistence
+├── lib/                  # Utilities and helpers
+│   ├── utils.ts          # Common utilities including cn() function
+│   ├── mock-data.ts      # Development mock data
+│   ├── local-storage.ts  # Storage utilities
+│   └── date-utils.ts     # Date formatting helpers
+├── root.tsx              # Root layout with providers
+├── routes.ts             # Route configuration
+└── app.css              # Global styles and Tailwind directives
+```
 
 ### Key Patterns
 - **Server-Side Rendering**: Enabled by default in `react-router.config.ts`
-- **Route Configuration**: Uses new React Router v7 config format in `routes.ts`
-- **TypeScript Paths**: `~/*` maps to `./app/*` for imports
-- **Styling**: TailwindCSS with `clsx` and `tailwind-merge` utility in `app/lib/utils.ts`
-- **Error Handling**: Global error boundary in `root.tsx` with dev/prod error display
+- **Route Configuration**: Uses React Router v7 config format in `routes.ts`
+- **TypeScript Paths**: `~/*` maps to `./app/*` for clean imports
+- **Component Organization**: Grouped by feature/type for maintainability
+- **Context Providers**: Wrapped in root App component for global state
 
-### Route Structure
-Routes are defined in `app/routes.ts` using the new config format:
+### State Management Architecture
 ```typescript
-export default [index("routes/home.tsx")] satisfies RouteConfig;
+App (root.tsx)
+└── AuthProvider
+    └── DataManagementProvider
+        └── CallQueueProvider
+            └── AgentsProvider
+                └── Routes + NotificationProvider
+```
+
+## Coding Standards
+
+### TypeScript Configuration
+```json
+{
+  "strict": true,
+  "target": "ES2022",
+  "module": "ES2022",
+  "jsx": "react-jsx",
+  "paths": { "~/*": ["./app/*"] }
+}
 ```
 
 ### Component Patterns
-- Route components export `meta` functions for SEO
-- Layouts use the `Layout` component pattern from `root.tsx`
-- Utility classes combined using the `cn()` function from `app/lib/utils.ts`
+```typescript
+// Component definition
+interface ComponentNameProps {
+  prop1: string;
+  prop2?: boolean;
+  onAction: (value: string) => void;
+}
+
+export function ComponentName({ prop1, prop2 = false, onAction }: ComponentNameProps) {
+  // Implementation
+}
+```
+
+### File Naming Conventions
+- **Components**: `kebab-case.tsx` (e.g., `role-selection-card.tsx`)
+- **Contexts**: `kebab-case-context.tsx` (e.g., `auth-context.tsx`)
+- **Utilities**: `kebab-case.ts` (e.g., `date-utils.ts`)
+- **Types**: Inline or in component file, not separate files
+
+### Import Organization
+```typescript
+// External dependencies
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+
+// Internal components
+import { Button } from '~/components/ui/button';
+import { Card } from '~/components/ui/card';
+
+// Contexts and hooks
+import { useAuth } from '~/contexts/auth-context';
+
+// Utilities and types
+import { cn } from '~/lib/utils';
+```
+
+### Styling Approach
+- **Utility-First**: Use TailwindCSS utilities as primary styling method
+- **Conditional Classes**: Use `cn()` utility for merging classes
+```typescript
+className={cn(
+  "base-classes",
+  condition && "conditional-classes",
+  { "object-syntax": isActive }
+)}
+```
+- **Component Variants**: Implement using class-variance-authority when needed
+- **Responsive Design**: Mobile-first with Tailwind breakpoints (sm:, md:, lg:)
+
+## Component Usage Examples
+
+### Using shadcn/ui Components
+```typescript
+import { Button } from '~/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/card';
+import { Badge } from '~/components/ui/badge';
+
+// Usage
+<Card>
+  <CardHeader>
+    <CardTitle>Call Queue</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Badge variant="destructive">High Priority</Badge>
+    <Button onClick={handleAssign}>Assign Call</Button>
+  </CardContent>
+</Card>
+```
+
+### Context Usage
+```typescript
+import { useAuth } from '~/contexts/auth-context';
+import { useCallQueue } from '~/contexts/call-queue-context';
+
+function Component() {
+  const { user, login, logout } = useAuth();
+  const { calls, updateCall } = useCallQueue();
+  
+  // Component logic
+}
+```
+
+### Form Handling Pattern
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  field1: z.string().min(1, "Required"),
+  field2: z.number().positive()
+});
+
+function FormComponent() {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: { field1: '', field2: 0 }
+  });
+  
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    // Handle submission
+  };
+}
+```
+
+## Best Practices and Guidelines
+
+### Performance
+- Use React.memo for expensive components
+- Implement proper loading states with Skeleton components
+- Utilize React Router's loader pattern for data fetching
+- Keep bundle size optimized with dynamic imports
+
+### Error Handling
+- Global error boundary in `root.tsx`
+- Form validation with Zod schemas
+- Toast notifications for user feedback
+- Proper error states in async operations
+
+### Accessibility
+- ARIA labels on interactive elements
+- Keyboard navigation support (Tab, Enter, Escape)
+- Focus management in modals
+- Screen reader friendly components
+
+### Code Quality Checklist
+When completing tasks, ensure:
+- ✅ TypeScript types are properly defined (no `any`)
+- ✅ Components follow established patterns
+- ✅ Imports use `~` alias
+- ✅ Loading and error states implemented
+- ✅ Mobile responsive design tested
+- ✅ Run `pnpm typecheck` passes without errors
+
+## Mock Data System
+The application includes a comprehensive mock data system for development:
+- `lib/mock-data.ts` - Generates realistic call center data
+- `lib/mock-data-persistent.ts` - Persists data in localStorage
+- Includes calls, agents, departments, and analytics data
 
 ## Deployment
 
-### Docker
-Multi-stage Dockerfile provided for containerized deployment:
-- Development dependencies stage
-- Production dependencies stage  
-- Build stage
-- Final runtime stage with Node.js 20 Alpine
+### Docker Configuration
+Multi-stage Dockerfile optimized for production:
+1. Dependencies installation stage
+2. Build stage with TypeScript compilation
+3. Production runtime with Node.js 20 Alpine
 
-### Build Output
-- `build/client/` - Static assets
-- `build/server/` - Server-side code
+### Environment Requirements
+- Node.js 20+
+- pnpm or npm
+- TypeScript 5.8+
 
-## Dependencies
+## Important Notes
 
-### Core
-- React Router v7 for routing and SSR
-- React 19 with TypeScript
-- TailwindCSS for styling
+### No Linting/Formatting Tools
+Currently, the project does not include:
+- ESLint configuration
+- Prettier configuration
+- Automated formatting
 
-### Utilities
-- `class-variance-authority` - For component variants
-- `clsx` + `tailwind-merge` - For conditional class names
-- `lucide-react` - Icon library
-- `isbot` - Bot detection for SSR
+Maintain code quality through:
+- TypeScript strict mode
+- Manual code review
+- Following established patterns
 
-## Best Practices and Coding Guidelines
+### Authentication Flow
+1. User selects role (Agent/Admin) on login page
+2. Credentials validated (mock implementation)
+3. User context updated with role and permissions
+4. Redirect to appropriate dashboard
+5. Role-based UI rendering throughout app
 
-### Code Quality
-- Always add descriptive variable names and functions
+### Data Persistence
+- Uses browser localStorage via `DataManagementContext`
+- Automatically saves and restores:
+  - User session
+  - Call queue state
+  - Agent availability
+  - User preferences
 
-## Project components Hierarchy UML
+## Component Hierarchy Overview
 
-`
-graph TD
-    %% Root Level
-    App[App - Root Component]
-    
-    %% Auth Context Wrapper
-    App --> AuthProvider[AuthProvider - Context]
-    AuthProvider --> Router[Router - React Router]
-    
-    %% Main Routes
-    Router --> PublicRoutes[Public Routes]
-    Router --> ProtectedRoutes[Protected Routes]
-    
-    %% Public Routes
-    PublicRoutes --> LoginPage[LoginPage]
-    LoginPage --> RoleSelectionCard[RoleSelectionCard]
-    RoleSelectionCard --> Card1[Card - shadcn]
-    RoleSelectionCard --> Button1[Button - shadcn]
-    RoleSelectionCard --> LucideIcons1[Users/UserCheck - lucide]
-    
-    %% Protected Routes Split
-    ProtectedRoutes --> ProtectedRoute[ProtectedRoute - HOC]
-    ProtectedRoute --> ProviderRoutes[Provider Routes]
-    ProtectedRoute --> AdminRoutes[Admin Routes]
-    
-    %% Provider Layout and Pages
-    ProviderRoutes --> ProviderLayout[ProviderLayout]
-    ProviderLayout --> Sidebar1[Sidebar - shadcn]
-    ProviderLayout --> Avatar1[Avatar - shadcn]
-    ProviderLayout --> NavItems1[NavigationItems]
-    NavItems1 --> Button2[Button - shadcn]
-    
-    ProviderLayout --> ProviderDashboard[ProviderDashboard]
-    ProviderDashboard --> StatsCards[StatsCards]
-    StatsCards --> Card2[Card - shadcn]
-    StatsCards --> Badge1[Badge - shadcn]
-    ProviderDashboard --> WeeklyScheduleView[WeeklyScheduleView - Shared]
-    
-    ProviderLayout --> ProviderAvailability[ProviderAvailability]
-    ProviderAvailability --> AvailabilityForm[AvailabilityForm]
-    AvailabilityForm --> Form1[Form - shadcn]
-    AvailabilityForm --> Select1[Select - shadcn]
-    AvailabilityForm --> Input1[Input - shadcn]
-    AvailabilityForm --> Switch1[Switch - shadcn]
-    AvailabilityForm --> Button3[Button - shadcn]
-    
-    ProviderAvailability --> AvailabilityList[AvailabilityList]
-    AvailabilityList --> Table1[Table - shadcn]
-    AvailabilityList --> Badge2[Badge - shadcn]
-    AvailabilityList --> EditDialog[EditDialog]
-    EditDialog --> Dialog1[Dialog - shadcn]
-    EditDialog --> Form2[Form - shadcn]
-    AvailabilityList --> DeleteConfirm[DeleteConfirmation]
-    DeleteConfirm --> AlertDialog1[AlertDialog - shadcn]
-    
-    %% Admin Layout and Pages
-    AdminRoutes --> AdminLayout[AdminLayout]
-    AdminLayout --> Sidebar2[Sidebar - shadcn]
-    AdminLayout --> Breadcrumb1[Breadcrumb - shadcn]
-    AdminLayout --> Avatar2[Avatar - shadcn]
-    AdminLayout --> Badge3[Badge - shadcn]
-    
-    AdminLayout --> AdminDashboard[AdminDashboard]
-    AdminDashboard --> MetricsCards[MetricsCards]
-    MetricsCards --> Card3[Card - shadcn]
-    MetricsCards --> Progress1[Progress - shadcn]
-    AdminDashboard --> Chart1[Chart - shadcn]
-    AdminDashboard --> QuickApprovals[QuickApprovalsList]
-    QuickApprovals --> ScrollArea1[ScrollArea - shadcn]
-    QuickApprovals --> Card4[Card - shadcn]
-    
-    AdminLayout --> AdminScheduling[AdminScheduling]
-    AdminScheduling --> PendingApprovals[PendingApprovals]
-    PendingApprovals --> Tabs1[Tabs - shadcn]
-    PendingApprovals --> ApprovalCard[ApprovalCard]
-    ApprovalCard --> Card5[Card - shadcn]
-    ApprovalCard --> Avatar3[Avatar - shadcn]
-    ApprovalCard --> Button4[Button - shadcn]
-    ApprovalCard --> Tooltip1[Tooltip - shadcn]
-    
-    AdminScheduling --> CalendarView[CalendarView]
-    CalendarView --> CalendarGrid[CalendarGrid - Custom]
-    CalendarGrid --> Popover1[Popover - shadcn]
-    CalendarGrid --> ContextMenu1[ContextMenu - shadcn]
-    CalendarGrid --> Badge4[Badge - shadcn]
-    
-    AdminScheduling --> ProviderFilter[ProviderFilter]
-    ProviderFilter --> Command1[Command - shadcn]
-    ProviderFilter --> Checkbox1[Checkbox - shadcn]
-    ProviderFilter --> Toggle1[Toggle - shadcn]
-    
-    %% Shared Components
-    WeeklyScheduleView --> WeeklyCalendar[WeeklyCalendar - Shared Component]
-    CalendarView --> WeeklyCalendar
-    WeeklyCalendar --> HoverCard1[HoverCard - shadcn]
-    WeeklyCalendar --> Card6[Card - shadcn]
-    WeeklyCalendar --> Separator1[Separator - shadcn]
-    
-    %% Global Components
-    Router --> NotificationSystem[NotificationSystem - Global]
-    NotificationSystem --> Sonner1[Sonner - shadcn]
-    NotificationSystem --> Sheet1[Sheet - shadcn]
-    
-    Router --> LoadingStates[LoadingStates - Global]
-    LoadingStates --> Skeleton1[Skeleton - shadcn]
-    LoadingStates --> Progress2[Progress - shadcn]
-    
-    Router --> ErrorBoundary[ErrorBoundary - HOC]
-    ErrorBoundary --> Alert1[Alert - shadcn]
-    ErrorBoundary --> AlertDialog2[AlertDialog - shadcn]
-    
-    %% Custom Hooks (not components but important for hierarchy)
-    AuthProvider -.-> useAuth[useAuth - Hook]
-    ProviderAvailability -.-> useAvailability[useAvailability - Hook]
-    AdminScheduling -.-> useSchedule[useSchedule - Hook]
-    WeeklyCalendar -.-> useCalendarData[useCalendarData - Hook]
-    
-    %% HOC Relationships
-    ProtectedRoute -.-> withAuth[withAuth - HOC]
-    LoadingStates -.-> withLoadingState[withLoadingState - HOC]
-    ErrorBoundary -.-> withErrorBoundary[withErrorBoundary - HOC]
-    
-    %% Style classes
-    classDef page fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    classDef layout fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    classDef component fill:#d1fae5,stroke:#10b981,stroke-width:2px
-    classDef shadcn fill:#f3e8ff,stroke:#9333ea,stroke-width:2px
-    classDef hook fill:#fee2e2,stroke:#dc2626,stroke-width:1px,stroke-dasharray: 5 5
-    classDef hoc fill:#ffedd5,stroke:#ea580c,stroke-width:1px,stroke-dasharray: 5 5
-    
-    %% Apply classes
-    class LoginPage,ProviderDashboard,ProviderAvailability,AdminDashboard,AdminScheduling page
-    class ProviderLayout,AdminLayout layout
-    class RoleSelectionCard,StatsCards,AvailabilityForm,AvailabilityList,MetricsCards,PendingApprovals,CalendarView,ProviderFilter,WeeklyCalendar,NotificationSystem,LoadingStates component
-    class Card1,Card2,Card3,Card4,Card5,Card6,Button1,Button2,Button3,Button4,Form1,Form2,Select1,Input1,Switch1,Table1,Badge1,Badge2,Badge3,Badge4,Dialog1,AlertDialog1,AlertDialog2,Sidebar1,Sidebar2,Avatar1,Avatar2,Avatar3,Breadcrumb1,Progress1,Progress2,Chart1,ScrollArea1,Tabs1,Tooltip1,Popover1,ContextMenu1,Command1,Checkbox1,Toggle1,HoverCard1,Separator1,Sonner1,Sheet1,Skeleton1,Alert1 shadcn
-    class useAuth,useAvailability,useSchedule,useCalendarData hook
-    class withAuth,withLoadingState,withErrorBoundary hoc`
+The application follows a clear component hierarchy:
+
+1. **App Root** → Provides all contexts
+2. **Protected Routes** → Role-based access control
+3. **Layout Components** → Consistent UI structure
+4. **Feature Components** → Business logic implementation
+5. **UI Components** → Reusable shadcn/ui elements
+
+Each level has specific responsibilities and maintains separation of concerns for maintainability and scalability.
