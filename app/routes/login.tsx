@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router"
 import { useState } from "react"
 import { toast } from "sonner"
+import { Users, Shield, ArrowLeft } from "lucide-react"
 
 import { Button } from "~/components/ui/button"
 import {
@@ -23,14 +24,10 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
+import { Label } from "~/components/ui/label"
 import { useAuth } from "~/contexts/auth-context"
+import { RoleSelectionCard } from "~/components/auth/role-selection-card"
 
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -39,17 +36,21 @@ const loginSchema = z.object({
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
+type AuthStep = "role-selection" | "credentials"
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [authStep, setAuthStep] = useState<AuthStep>("role-selection")
+  const [selectedRole, setSelectedRole] = useState<"agent" | "admin" | null>(null)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
+      role: "agent",
     },
   })
 
@@ -59,9 +60,18 @@ export default function LoginPage() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
       
-      // Mock authentication
+      // Mock authentication - in real app, validate credentials
+      const validCredentials = (
+        (data.username === "agent" && data.password === "password123" && data.role === "agent") ||
+        (data.username === "admin" && data.password === "password123" && data.role === "admin")
+      )
+      
+      if (!validCredentials) {
+        throw new Error("Invalid credentials")
+      }
+      
       const user = {
-        id: "1",
+        id: data.role === "admin" ? "admin-1" : "agent-1",
         name: data.username,
         role: data.role,
         permissions: data.role === "admin" 
@@ -79,102 +89,148 @@ export default function LoginPage() {
     }
   }
 
+  const handleRoleSelection = (role: "agent" | "admin") => {
+    setSelectedRole(role)
+    form.setValue("role", role)
+    setAuthStep("credentials")
+  }
+
+  const handleBack = () => {
+    setAuthStep("role-selection")
+    setSelectedRole(null)
+    form.reset()
+  }
+
   return (
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-1 lg:px-0">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">
-              Call Center Login
-            </CardTitle>
-            <CardDescription className="text-center">
-              Enter your credentials to continue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your username"
-                          type="text"
-                          autoCapitalize="none"
-                          autoComplete="username"
-                          autoCorrect="off"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your password"
-                          type="password"
-                          autoComplete="current-password"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select
-                        disabled={isLoading}
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select your role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="agent">Agent</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-2 text-center text-sm text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Agent: agent / password123</p>
-            <p>Admin: admin / password123</p>
-          </CardFooter>
-        </Card>
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6">
+        {/* Logo/Branding */}
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Call Center Management System
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Select your role to continue
+          </p>
+        </div>
+
+        {authStep === "role-selection" ? (
+          /* Role Selection Step */
+          <div className="grid gap-6 sm:grid-cols-2 mx-auto max-w-[600px] w-full px-4">
+            <RoleSelectionCard
+              role="agent"
+              title="Call Agent"
+              description="Handle customer calls and manage the queue"
+              icon={<Users className="h-6 w-6 text-primary" />}
+              selected={selectedRole === "agent"}
+              onSelect={() => handleRoleSelection("agent")}
+              disabled={isLoading}
+            />
+            <RoleSelectionCard
+              role="admin"
+              title="Administrator"
+              description="Manage agents, view analytics, and oversee operations"
+              icon={<Shield className="h-6 w-6 text-primary" />}
+              selected={selectedRole === "admin"}
+              onSelect={() => handleRoleSelection("admin")}
+              disabled={isLoading}
+            />
+          </div>
+        ) : (
+          /* Credentials Step */
+          <div className="mx-auto w-full sm:w-[400px]">
+            <Card>
+              <CardHeader className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBack}
+                    disabled={isLoading}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {selectedRole === "admin" ? (
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <Users className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium capitalize">
+                      {selectedRole}
+                    </span>
+                  </div>
+                </div>
+                <CardTitle className="text-2xl text-center">
+                  Login as {selectedRole === "admin" ? "Administrator" : "Agent"}
+                </CardTitle>
+                <CardDescription className="text-center">
+                  Enter your credentials to continue
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter your username"
+                              type="text"
+                              autoCapitalize="none"
+                              autoComplete="username"
+                              autoCorrect="off"
+                              disabled={isLoading}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter your password"
+                              type="password"
+                              autoComplete="current-password"
+                              disabled={isLoading}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Logging in..." : "Login"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-2 text-center text-sm text-muted-foreground">
+                <p>Demo credentials:</p>
+                <p className="font-mono text-xs">
+                  {selectedRole === "admin" ? "admin / password123" : "agent / password123"}
+                </p>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

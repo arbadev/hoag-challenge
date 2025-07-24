@@ -9,6 +9,8 @@ import {
 
 import type { Route } from "./+types/root";
 import { AuthProvider } from "~/contexts/auth-context";
+import { CallQueueProvider } from "~/contexts/call-queue-context";
+import { AgentsProvider } from "~/contexts/agents-context";
 import { Toaster } from "~/components/ui/sonner";
 import "./app.css";
 
@@ -46,8 +48,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
-      <Outlet />
-      <Toaster />
+      <CallQueueProvider>
+        <AgentsProvider>
+          <Outlet />
+          <Toaster />
+        </AgentsProvider>
+      </CallQueueProvider>
     </AuthProvider>
   );
 }
