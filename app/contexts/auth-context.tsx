@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { ReactNode } from "react"
+import { localStorageService } from "~/lib/local-storage"
 
 interface User {
   id: string
@@ -21,12 +22,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
+  // Check for persisted session on mount
+  useEffect(() => {
+    const persistedAuth = localStorageService.getAuth()
+    if (persistedAuth) {
+      setUser(persistedAuth)
+    }
+  }, [])
+
   const login = useCallback((userData: User) => {
     setUser(userData)
+    // Persist to sessionStorage
+    localStorageService.saveAuth(userData)
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
+    // Clear from sessionStorage
+    localStorageService.clearAuth()
   }, [])
 
   const hasPermission = useCallback(

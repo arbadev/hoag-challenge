@@ -1,4 +1,4 @@
-import { Menu, LogOut, Settings, User } from "lucide-react"
+import { Menu, LogOut, Settings, User, Database, RefreshCw } from "lucide-react"
 import { useNavigate } from "react-router"
 import { Button } from "~/components/ui/button"
 import {
@@ -10,7 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
+import { Badge } from "~/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip"
 import { useAuth } from "~/contexts/auth-context"
+import { useDataManagement } from "~/contexts/data-management-context"
 import { toast } from "sonner"
 
 interface HeaderProps {
@@ -19,6 +27,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth()
+  const { isUsingPersistedData, resetMockData } = useDataManagement()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -54,6 +63,41 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Data persistence indicator */}
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              {isUsingPersistedData && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Database className="h-3 w-3" />
+                      Persisted Data
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Using locally persisted mock data</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetMockData}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Reset Data
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Clear persisted data and generate fresh mock data</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">

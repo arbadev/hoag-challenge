@@ -31,6 +31,7 @@ interface CallContextMenuProps {
   onViewDetails?: () => void
   onComplete?: () => void
   onDecline?: () => void
+  onTake?: () => void
   onChangePriority?: (priority: Call["priority"]) => void
   userRole: "agent" | "admin"
   children: React.ReactNode
@@ -44,6 +45,7 @@ export function CallContextMenu({
   onViewDetails,
   onComplete,
   onDecline,
+  onTake,
   onChangePriority,
   userRole,
   children
@@ -95,6 +97,14 @@ Reason: ${call.reason}`
             <UserPlus className="mr-2 h-4 w-4" />
             Assign to Agent
             <ContextMenuShortcut>⌘A</ContextMenuShortcut>
+          </ContextMenuItem>
+        )}
+
+        {isWaiting && userRole === "agent" && (
+          <ContextMenuItem onClick={onTake} className="text-green-600 font-medium">
+            <Phone className="mr-2 h-4 w-4" />
+            Take Call
+            <ContextMenuShortcut>⌘Enter</ContextMenuShortcut>
           </ContextMenuItem>
         )}
 

@@ -28,6 +28,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Label } from "~/components/ui/label"
 import { useAuth } from "~/contexts/auth-context"
 import { RoleSelectionCard } from "~/components/auth/role-selection-card"
+import { getAgentByUsername } from "~/lib/mock-data-persistent"
 
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -70,9 +71,21 @@ export default function LoginPage() {
         throw new Error("Invalid credentials")
       }
       
+      // For agent role, try to map to a specific agent
+      let userId = data.role === "admin" ? "admin-1" : "agent-1"
+      let displayName = data.username
+      
+      if (data.role === "agent") {
+        const agent = getAgentByUsername(data.username)
+        if (agent) {
+          userId = agent.id
+          displayName = agent.name
+        }
+      }
+      
       const user = {
-        id: data.role === "admin" ? "admin-1" : "agent-1",
-        name: data.username,
+        id: userId,
+        name: displayName,
         role: data.role,
         permissions: data.role === "admin" 
           ? ["view_queue", "manage_queue", "view_agents", "view_analytics"]

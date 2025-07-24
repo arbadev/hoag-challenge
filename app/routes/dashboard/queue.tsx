@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/dropdown-menu"
 import { Input } from "~/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select"
+import { Avatar, AvatarFallback } from "~/components/ui/avatar"
 import { 
   AssignCallModal, 
   TransferCallModal, 
@@ -27,6 +28,7 @@ import {
   CallDetailsModal 
 } from "~/components/modals"
 import { useCallQueue } from "~/contexts/call-queue-context"
+import { useAuth } from "~/contexts/auth-context"
 import type { Call } from "~/lib/mock-data"
 import { 
   MoreHorizontal, 
@@ -34,7 +36,8 @@ import {
   ArrowRightLeft, 
   AlertTriangle,
   Eye,
-  Search
+  Search,
+  Phone
 } from "lucide-react"
 import { CallHoverCard } from "~/components/call-hover-card"
 import { CallContextMenu } from "~/components/call-context-menu"
@@ -44,8 +47,9 @@ import { useAgents } from "~/contexts/agents-context"
 import { StatsCards } from "~/components/stats-cards"
 
 export default function QueuePage() {
-  const { calls, updateCallPriority, updateCallStatus } = useCallQueue()
-  const { agents } = useAgents()
+  const { calls, updateCallPriority, updateCallStatus, takeCall } = useCallQueue()
+  const { agents, incrementAgentCalls, decrementAgentCalls } = useAgents()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
@@ -112,12 +116,23 @@ export default function QueuePage() {
 
   const handleCompleteCall = (call: Call) => {
     updateCallStatus(call.id, 'completed')
+    // If call is assigned to an agent, update their metrics
+    if (call.assignedTo) {
+      decrementAgentCalls(call.assignedTo)
+    }
     toastSuccess.callCompleted()
   }
 
   const handleDeclineCall = (call: Call) => {
     updateCallStatus(call.id, 'waiting')
     toastInfo.queuePositionUpdated(1)
+  }
+
+  const handleTakeCall = (call: Call) => {
+    if (!user?.id) return
+    takeCall(call.id, user.id)
+    incrementAgentCalls(user.id)
+    toastSuccess.agentAssigned(user.name || 'You')
   }
 
   const formatWaitTime = (seconds: number) => {
@@ -192,6 +207,7 @@ export default function QueuePage() {
                   <TableHead>Priority</TableHead>
                   <TableHead>Wait Time</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Assigned To</TableHead>
                   <TableHead>Reason</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -199,7 +215,7 @@ export default function QueuePage() {
               <TableBody>
                 {filteredCalls.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No calls found matching your criteria
                     </TableCell>
                   </TableRow>
@@ -210,7 +226,7 @@ export default function QueuePage() {
                     <CallContextMenu
                       key={call.id}
                       call={call}
-                      userRole="agent"
+                      userRole={user?.role || "agent"}
                       onAssign={() => handleAssign(call)}
                       onTransfer={() => handleTransfer(call)}
                       onEscalate={() => handleEscalate(call)}
@@ -218,6 +234,7 @@ export default function QueuePage() {
                       onComplete={() => handleCompleteCall(call)}
                       onDecline={() => handleDeclineCall(call)}
                       onChangePriority={(priority) => handleChangePriority(call, priority)}
+                      onTake={() => handleTakeCall(call)}
                     >
                       <TableRow>
                         <TableCell className="font-medium">
@@ -248,6 +265,20 @@ export default function QueuePage() {
                           {call.status.replace('-', ' ')}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        {assignedAgent ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs">
+                                {assignedAgent.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{assignedAgent.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="max-w-xs truncate">
                         {call.reason}
                       </TableCell>
@@ -265,10 +296,19 @@ export default function QueuePage() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {call.status === 'waiting' && (
+                            {call.status === 'waiting' && user?.role === 'admin' && (
                               <DropdownMenuItem onClick={() => handleAssign(call)}>
                                 <UserPlus className="mr-2 h-4 w-4" />
                                 Assign
+                              </DropdownMenuItem>
+                            )}
+                            {call.status === 'waiting' && user?.role === 'agent' && (
+                              <DropdownMenuItem 
+                                onClick={() => handleTakeCall(call)}
+                                className="text-green-600 font-medium"
+                              >
+                                <Phone className="mr-2 h-4 w-4" />
+                                Take Call
                               </DropdownMenuItem>
                             )}
                             {(call.status === 'assigned' || call.status === 'in-progress') && (

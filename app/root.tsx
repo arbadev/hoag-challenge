@@ -11,6 +11,7 @@ import type { Route } from "./+types/root";
 import { AuthProvider } from "~/contexts/auth-context";
 import { CallQueueProvider } from "~/contexts/call-queue-context";
 import { AgentsProvider } from "~/contexts/agents-context";
+import { DataManagementProvider } from "~/contexts/data-management-context";
 import { NotificationProvider } from "~/components/providers/notification-provider";
 import "./app.css";
 
@@ -48,12 +49,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
-      <CallQueueProvider>
-        <AgentsProvider>
-          <Outlet />
-          <NotificationProvider />
-        </AgentsProvider>
-      </CallQueueProvider>
+      <DataManagementProvider>
+        <CallQueueProvider>
+          <AgentsProvider>
+            <Outlet />
+            <NotificationProvider />
+          </AgentsProvider>
+        </CallQueueProvider>
+      </DataManagementProvider>
     </AuthProvider>
   );
 }

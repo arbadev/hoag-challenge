@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { ReactNode } from "react"
 import { 
-  generateMockAgents,
   getAgentById,
   getAvailableAgents,
   type Agent 
 } from "~/lib/mock-data"
+import { getOrGenerateAgents } from "~/lib/mock-data-persistent"
+import { localStorageService } from "~/lib/local-storage"
 
 interface AgentsContextType {
   agents: Agent[]
@@ -24,10 +25,18 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
   // Start with empty array to avoid hydration mismatch
   const [agents, setAgents] = useState<Agent[]>([])
 
-  // Generate mock data only on client after mount
+  // Load persisted data or generate new data only on client after mount
   useEffect(() => {
-    setAgents(generateMockAgents(8))
+    const persistedAgents = getOrGenerateAgents()
+    setAgents(persistedAgents)
   }, [])
+
+  // Save agents to localStorage whenever they change
+  useEffect(() => {
+    if (agents.length > 0) {
+      localStorageService.saveAgents(agents)
+    }
+  }, [agents])
 
   // Simulate agent status changes
   useEffect(() => {
@@ -112,7 +121,9 @@ export function AgentsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshAgents = useCallback(() => {
-    setAgents(generateMockAgents(8))
+    // Reload from localStorage to get latest data
+    const persistedAgents = getOrGenerateAgents()
+    setAgents(persistedAgents)
   }, [])
 
   const availableAgents = getAvailableAgents(agents)

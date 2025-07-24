@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { ReactNode } from "react"
 import { 
-  generateMockCalls, 
   updateCallWaitTimes, 
   simulateCallStatusChange,
   getCallStats,
   type Call 
 } from "~/lib/mock-data"
+import { getOrGenerateCalls } from "~/lib/mock-data-persistent"
+import { localStorageService } from "~/lib/local-storage"
 
 interface CallQueueContextType {
   calls: Call[]
@@ -25,6 +26,7 @@ interface CallQueueContextType {
   updateFilters: (filters: Partial<CallQueueContextType['filters']>) => void
   updateCallStatus: (callId: string, status: Call['status']) => void
   assignCall: (callId: string, agentId: string) => void
+  takeCall: (callId: string, agentId: string) => void
   updateCallPriority: (callId: string, priority: Call['priority']) => void
   addEscalationNote: (callId: string, note: string) => void
   refreshCalls: () => void
@@ -42,10 +44,18 @@ export function CallQueueProvider({ children }: { children: ReactNode }) {
     searchTerm: '',
   })
 
-  // Generate mock data only on client after mount
+  // Load persisted data or generate new data only on client after mount
   useEffect(() => {
-    setCalls(generateMockCalls(25))
+    const persistedCalls = getOrGenerateCalls()
+    setCalls(persistedCalls)
   }, [])
+
+  // Save calls to localStorage whenever they change
+  useEffect(() => {
+    if (calls.length > 0) {
+      localStorageService.saveCalls(calls)
+    }
+  }, [calls])
 
   // Update wait times every second
   useEffect(() => {
@@ -81,6 +91,14 @@ export function CallQueueProvider({ children }: { children: ReactNode }) {
     ))
   }, [])
 
+  const takeCall = useCallback((callId: string, agentId: string) => {
+    setCalls(prev => prev.map(call => 
+      call.id === callId 
+        ? { ...call, assignedTo: agentId, status: 'in-progress' as const } 
+        : call
+    ))
+  }, [])
+
   const updateCallPriority = useCallback((callId: string, priority: Call['priority']) => {
     setCalls(prev => {
       const updated = prev.map(call => 
@@ -106,7 +124,9 @@ export function CallQueueProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshCalls = useCallback(() => {
-    setCalls(generateMockCalls(25))
+    // Reload from localStorage to get latest data
+    const persistedCalls = getOrGenerateCalls()
+    setCalls(persistedCalls)
   }, [])
 
   // Filter calls based on current filters
@@ -141,6 +161,7 @@ export function CallQueueProvider({ children }: { children: ReactNode }) {
     updateFilters,
     updateCallStatus,
     assignCall,
+    takeCall,
     updateCallPriority,
     addEscalationNote,
     refreshCalls,
