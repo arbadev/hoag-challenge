@@ -29,19 +29,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 
-export interface AvailabilitySlot {
-  id: string;
-  providerId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  isRecurring: boolean;
-  recurringDays?: number[];
-  status: "pending" | "approved" | "rejected";
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { AvailabilitySlot } from "~/types/scheduling";
 
 interface AvailabilityTableProps {
   slots: AvailabilitySlot[];

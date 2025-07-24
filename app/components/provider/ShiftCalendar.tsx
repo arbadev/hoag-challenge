@@ -9,17 +9,8 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 
-export interface Shift {
-  id: string;
-  providerId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  department?: string;
-  location?: string;
-  status: "scheduled" | "completed" | "cancelled";
-  notes?: string;
-}
+import type { Shift } from "~/types/scheduling";
+export type { Shift };
 
 interface ShiftCalendarProps {
   shifts: Shift[];

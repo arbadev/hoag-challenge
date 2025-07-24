@@ -12,8 +12,9 @@ import { Plus } from "lucide-react";
 // Provider components
 import { ProviderStats } from "~/components/provider/ProviderStats";
 import { AvailabilityForm } from "~/components/provider/AvailabilityForm";
-import { AvailabilityTable, type AvailabilitySlot } from "~/components/provider/AvailabilityTable";
-import { ShiftCalendar, type Shift } from "~/components/provider/ShiftCalendar";
+import { AvailabilityTable } from "~/components/provider/AvailabilityTable";
+import { ShiftCalendar } from "~/components/provider/ShiftCalendar";
+import type { AvailabilitySlot, Shift } from "~/types/scheduling";
 import { ShiftList } from "~/components/provider/ShiftList";
 
 // Mock data for demonstration
