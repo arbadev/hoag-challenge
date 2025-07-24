@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProtectedRoute } from "~/components/protected-route"
 import { MainLayout } from "~/components/layouts/main-layout"
 import { 
@@ -36,12 +36,20 @@ import {
   Eye,
   Search
 } from "lucide-react"
+import { CallHoverCard } from "~/components/call-hover-card"
+import { CallContextMenu } from "~/components/call-context-menu"
+import { QueueTableSkeleton, StatsCardsSkeleton } from "~/components/loading-states/queue-skeleton"
+import { toastSuccess, toastError, toastInfo } from "~/components/notifications/toast-notifications"
+import { useAgents } from "~/contexts/agents-context"
+import { StatsCards } from "~/components/stats-cards"
 
 export default function QueuePage() {
-  const { calls } = useCallQueue()
+  const { calls, updateCallPriority, updateCallStatus } = useCallQueue()
+  const { agents } = useAgents()
   const [searchTerm, setSearchTerm] = useState("")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
+  const [isLoading, setIsLoading] = useState(false)
   
   // Modal states
   const [selectedCall, setSelectedCall] = useState<Call | null>(null)
@@ -49,6 +57,17 @@ export default function QueuePage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false)
   const [escalateModalOpen, setEscalateModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+
+  // Simulate initial loading only on client
+  useEffect(() => {
+    // Set loading to true only after mount to avoid hydration mismatch
+    setIsLoading(true)
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+      toastInfo.newCallInQueue("John Smith", "high")
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Filter calls
   const filteredCalls = calls.filter(call => {
@@ -86,6 +105,21 @@ export default function QueuePage() {
     setEscalateModalOpen(true)
   }
 
+  const handleChangePriority = (call: Call, priority: Call["priority"]) => {
+    updateCallPriority(call.id, priority)
+    toastSuccess.priorityUpdated(priority)
+  }
+
+  const handleCompleteCall = (call: Call) => {
+    updateCallStatus(call.id, 'completed')
+    toastSuccess.callCompleted()
+  }
+
+  const handleDeclineCall = (call: Call) => {
+    updateCallStatus(call.id, 'waiting')
+    toastInfo.queuePositionUpdated(1)
+  }
+
   const formatWaitTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
@@ -102,6 +136,13 @@ export default function QueuePage() {
               Manage incoming calls and assignments
             </p>
           </div>
+
+          {/* Stats Cards */}
+          {isLoading ? (
+            <StatsCardsSkeleton />
+          ) : (
+            <StatsCards />
+          )}
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
@@ -139,8 +180,11 @@ export default function QueuePage() {
           </div>
 
           {/* Call Queue Table */}
-          <div className="rounded-md border">
-            <Table>
+          {isLoading ? (
+            <QueueTableSkeleton />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Patient</TableHead>
@@ -160,14 +204,30 @@ export default function QueuePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCalls.map((call) => (
-                    <TableRow key={call.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <p>{call.patientName}</p>
-                          <p className="text-sm text-muted-foreground">{call.phoneNumber}</p>
-                        </div>
-                      </TableCell>
+                  filteredCalls.map((call) => {
+                    const assignedAgent = call.assignedTo ? agents.find(a => a.id === call.assignedTo) : null
+                    return (
+                    <CallContextMenu
+                      key={call.id}
+                      call={call}
+                      userRole="agent"
+                      onAssign={() => handleAssign(call)}
+                      onTransfer={() => handleTransfer(call)}
+                      onEscalate={() => handleEscalate(call)}
+                      onViewDetails={() => handleViewDetails(call)}
+                      onComplete={() => handleCompleteCall(call)}
+                      onDecline={() => handleDeclineCall(call)}
+                      onChangePriority={(priority) => handleChangePriority(call, priority)}
+                    >
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <CallHoverCard call={call} assignedAgent={assignedAgent}>
+                            <div className="cursor-pointer">
+                              <p>{call.patientName}</p>
+                              <p className="text-sm text-muted-foreground">{call.phoneNumber}</p>
+                            </div>
+                          </CallHoverCard>
+                        </TableCell>
                       <TableCell>{call.department}</TableCell>
                       <TableCell>
                         <Badge 
@@ -228,14 +288,18 @@ export default function QueuePage() {
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                      </TableRow>
+                    </CallContextMenu>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
           </div>
+          )}
         </div>
+
 
         {/* Modals */}
         <AssignCallModal 

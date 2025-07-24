@@ -6,6 +6,7 @@ import { ScrollArea } from "~/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "~/components/ui/avatar"
 import { useAgents } from "~/contexts/agents-context"
 import type { Call } from "~/lib/mock-data"
+import { formatDate, formatTime } from "~/lib/date-utils"
 import { 
   Phone, 
   Clock, 
@@ -39,9 +40,8 @@ export function CallDetailsModal({
   if (!call) return null
 
   const assignedAgent = call.assignedTo ? agents.find(a => a.id === call.assignedTo) : null
-  const createdDate = new Date(call.createdAt)
-  const formattedDate = createdDate.toLocaleDateString()
-  const formattedTime = createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const formattedDate = formatDate(call.createdAt)
+  const formattedTime = formatTime(call.createdAt)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

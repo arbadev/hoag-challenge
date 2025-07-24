@@ -21,7 +21,13 @@ interface AgentsContextType {
 const AgentsContext = createContext<AgentsContextType | undefined>(undefined)
 
 export function AgentsProvider({ children }: { children: ReactNode }) {
-  const [agents, setAgents] = useState<Agent[]>(() => generateMockAgents(8))
+  // Start with empty array to avoid hydration mismatch
+  const [agents, setAgents] = useState<Agent[]>([])
+
+  // Generate mock data only on client after mount
+  useEffect(() => {
+    setAgents(generateMockAgents(8))
+  }, [])
 
   // Simulate agent status changes
   useEffect(() => {

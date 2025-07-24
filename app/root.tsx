@@ -11,7 +11,7 @@ import type { Route } from "./+types/root";
 import { AuthProvider } from "~/contexts/auth-context";
 import { CallQueueProvider } from "~/contexts/call-queue-context";
 import { AgentsProvider } from "~/contexts/agents-context";
-import { Toaster } from "~/components/ui/sonner";
+import { NotificationProvider } from "~/components/providers/notification-provider";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -36,7 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -51,7 +51,7 @@ export default function App() {
       <CallQueueProvider>
         <AgentsProvider>
           <Outlet />
-          <Toaster />
+          <NotificationProvider />
         </AgentsProvider>
       </CallQueueProvider>
     </AuthProvider>

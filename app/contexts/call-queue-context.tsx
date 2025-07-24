@@ -33,13 +33,19 @@ interface CallQueueContextType {
 const CallQueueContext = createContext<CallQueueContextType | undefined>(undefined)
 
 export function CallQueueProvider({ children }: { children: ReactNode }) {
-  const [calls, setCalls] = useState<Call[]>(() => generateMockCalls(25))
+  // Start with empty array to avoid hydration mismatch
+  const [calls, setCalls] = useState<Call[]>([])
   const [filters, setFilters] = useState<CallQueueContextType['filters']>({
     priority: 'all',
     department: null,
     status: null,
     searchTerm: '',
   })
+
+  // Generate mock data only on client after mount
+  useEffect(() => {
+    setCalls(generateMockCalls(25))
+  }, [])
 
   // Update wait times every second
   useEffect(() => {
