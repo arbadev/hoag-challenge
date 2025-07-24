@@ -83,11 +83,169 @@ npx shadcn-ui@latest add alert
 
 ## Future Enhancement Components (Post-MVP)
 
-### Provider Features
+### Provider Features - Detailed Implementation
+
+#### **Availability Management Component**
+The core feature allowing providers to submit and manage their available time slots.
+
+##### Components Required:
 - **Form** + **Input** + **Select** - Availability submission form
-- **DatePicker** - Date selection for availability
+- **DatePicker** - Date selection for availability  
 - **Table** - Display submitted availability slots
 - **Switch** - Toggle recurring availability
+- **Dialog** - Edit/delete confirmation modals
+- **Toast** - Success/error notifications
+- **TimePicker** (custom) - Time slot selection
+- **Badge** - Status indicators (pending/approved/rejected)
+
+##### Data Structure:
+```typescript
+interface AvailabilitySlot {
+  id: string;
+  providerId: string;
+  date: string; // ISO date
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  isRecurring: boolean;
+  recurringDays?: number[]; // 0-6 for Sun-Sat
+  status: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+##### Features:
+1. **Add New Availability**
+   - Date picker with min date validation (today onwards)
+   - Time range selector with 30-minute intervals
+   - Recurring option with day-of-week selector
+   - Optional notes field
+   - Validation for time conflicts
+
+2. **View/Manage Availability**
+   - Sortable table by date/status
+   - Filter by status (all/pending/approved/rejected)
+   - Edit action (only for pending slots)
+   - Delete action with confirmation
+   - Bulk delete for multiple selections
+
+3. **Visual Indicators**
+   - Color-coded status badges
+   - Past dates grayed out
+   - Conflict warnings
+   - Loading states during submission
+
+#### **Upcoming Shifts Component**
+Display confirmed shifts in both calendar and list views.
+
+##### Components Required:
+- **Calendar** - Monthly/weekly view toggle
+- **Tabs** - Switch between calendar and list views
+- **Table** - List view of shifts
+- **Popover** - Shift details on hover/click
+- **ScrollArea** - For long shift lists
+- **Select** - View filter (week/month)
+
+##### Data Structure:
+```typescript
+interface Shift {
+  id: string;
+  providerId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  department?: string;
+  location?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  notes?: string;
+}
+```
+
+##### Features:
+1. **Calendar View**
+   - Weekly view by default
+   - Color-coded shift blocks
+   - Click to view shift details
+   - Navigation between weeks/months
+   - Today indicator
+   - Export to personal calendar
+
+2. **List View**
+   - Tabular format with all shift details
+   - Sort by date/time/department
+   - Filter by date range
+   - Print-friendly format
+   - CSV export option
+
+3. **Shift Details**
+   - Time and duration
+   - Department/location info
+   - Special instructions
+   - Contact information
+
+#### **Provider Dashboard Stats**
+Quick overview cards showing key metrics.
+
+##### Components Required:
+- **Card** - Stat containers
+- **Progress** - Visual progress indicators
+- **Skeleton** - Loading states
+
+##### Features:
+- Total hours scheduled this week
+- Upcoming shifts count
+- Pending availability requests
+- Approval rate percentage
+
+#### **State Management**
+Using React Context for provider data management.
+
+##### Context Structure:
+```typescript
+interface ProviderContext {
+  availability: AvailabilitySlot[];
+  shifts: Shift[];
+  stats: {
+    weeklyHours: number;
+    upcomingShifts: number;
+    pendingRequests: number;
+    approvalRate: number;
+  };
+  isLoading: boolean;
+  error: string | null;
+  
+  // Actions
+  addAvailability: (slot: Omit<AvailabilitySlot, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateAvailability: (id: string, updates: Partial<AvailabilitySlot>) => void;
+  deleteAvailability: (id: string) => void;
+  refreshData: () => void;
+}
+```
+
+#### **Component Hierarchy**
+```
+ProviderPage
+├── ProviderStats (dashboard metrics)
+├── Tabs
+│   ├── AvailabilityTab
+│   │   ├── AvailabilityForm
+│   │   └── AvailabilityTable
+│   └── ShiftsTab
+│       ├── ViewToggle (calendar/list)
+│       ├── ShiftCalendar
+│       └── ShiftList
+└── Notifications (Toast container)
+```
+
+#### **User Flow**
+1. Provider logs in → Dashboard with stats
+2. Navigate to Availability → View current slots
+3. Click "Add Availability" → Form dialog opens
+4. Submit form → Toast notification + Table updates
+5. Admin approves → Status badge updates
+6. Approved slots → Appear in Shifts calendar
+7. Export/Print → Generate formatted output
 
 ### Admin Features
 - **Table** - Provider availability management
